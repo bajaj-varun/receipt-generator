@@ -1,0 +1,7 @@
+# Phase 1 - receipt generation core
+pillow>=11.0,<13
+numpy>=2.0,<3
+opencv-python-headless>=4.10,<6   # headless: no GUI libs, keeps the Cloud Run image small
+
+# Dev / test
+pytest>=8.0

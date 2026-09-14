@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Generated receipts
+output/
+
+# Environment / credentials
+.env
+*-service-account.json
+*.pem
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+.claude
+
+output/
+examples/
+assets/
