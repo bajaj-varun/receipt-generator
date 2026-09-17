@@ -170,6 +170,7 @@ class ReceiptRenderer:
         key = str(el.get("key", ""))
         value = str(el.get("value", ""))
         leader = el.get("leader", "")
+        tight = el.get("tight", False)
 
         x0, x1 = cur.box
         key_w, val_w = text_width(font, key), text_width(font, value)
@@ -265,6 +266,7 @@ class ReceiptRenderer:
     def _draw_image(self, draw, canvas, el, cur) -> None:
         """Paste a logo. Thermal printers are 1-bit, so dither by default."""
         path = Path(el["path"])
+        print("_draw_image function")
         if not path.is_absolute():
             from .utils import ASSETS_DIR
             path = ASSETS_DIR / path
@@ -280,6 +282,7 @@ class ReceiptRenderer:
         x = align_x(cur.box, logo.width, el.get("align", "center"))
         canvas.paste(logo, (x, cur.y))
         cur.y += logo.height + int(el.get("margin_bottom", 8))
+        print("out from _draw_image function")
 
     def _draw_barcode(self, draw, canvas, el, cur) -> None:
         """Code 39 barcode - the format most POS terminals print for a bill ref."""

@@ -8,6 +8,7 @@ fonts and overlays in-process via the lru_caches below).
 from __future__ import annotations
 
 import math
+import urllib.request
 from functools import lru_cache
 from pathlib import Path
 from typing import Iterable, Sequence
@@ -30,6 +31,39 @@ FONT_ALIASES = {
     "thermal-bold": "LiberationMono-Bold.ttf",
 }
 
+# Download URLs for each aliased font file (used when local copy is missing).
+_FONT_URLS: dict[str, str] = {
+    "DejaVuSansMono.ttf": (
+        "https://github.com/dejavu-fonts/dejavu-fonts/raw/main/fonts/DejaVuSansMono.ttf"
+    ),
+    "DejaVuSansMono-Bold.ttf": (
+        "https://github.com/dejavu-fonts/dejavu-fonts/raw/main/fonts/DejaVuSansMono-Bold.ttf"
+    ),
+    "LiberationMono-Regular.ttf": (
+        "https://github.com/liberationfonts/liberation-fonts/raw/main/src/LiberationMono-Regular.ttf"
+    ),
+    "LiberationMono-Bold.ttf": (
+        "https://github.com/liberationfonts/liberation-fonts/raw/main/src/LiberationMono-Bold.ttf"
+    ),
+}
+
+
+def _download_font(filename: str, dest: Path) -> None:
+    url = _FONT_URLS.get(filename)
+    if url is None:
+        raise FileNotFoundError(
+            f"No download URL registered for {filename!r}. "
+            f"Drop the .ttf into {FONTS_DIR} manually."
+        )
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(".tmp")
+    try:
+        urllib.request.urlretrieve(url, tmp)  # noqa: S310  (URL is a hard-coded constant)
+        tmp.replace(dest)
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
+
 # Relative type scale, multiplied against the template's base_size.
 SIZE_SCALE = {
     "xs": 0.70,
@@ -42,15 +76,23 @@ SIZE_SCALE = {
 
 
 def resolve_font_path(name: str) -> Path:
-    """Map a logical font name (or path) to a concrete .ttf on disk."""
+    """Map a logical font name (or path) to a concrete .ttf on disk.
+
+    If the file is missing and a download URL is registered, it is fetched
+    from the internet and cached in assets/fonts before returning.
+    """
     if name in FONT_ALIASES:
-        path = FONTS_DIR / FONT_ALIASES[name]
-        if path.exists():
-            return path
+        filename = FONT_ALIASES[name]
+        path = FONTS_DIR / filename
+        if not path.exists():
+            _download_font(filename, path)
+        return path
     candidate = Path(name)
     if candidate.is_file():
         return candidate
     bundled = FONTS_DIR / name
+    if not bundled.exists() and name in _FONT_URLS:
+        _download_font(name, bundled)
     if bundled.is_file():
         return bundled
     raise FileNotFoundError(
